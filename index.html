@@ -126,6 +126,9 @@
             top: 20px;
             right: 20px;
             z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
         .audio-control button {
             padding: 8px 12px;
@@ -141,6 +144,21 @@
         .audio-control button:hover {
             background: linear-gradient(45deg, #a8a8a8, #9900e6);
             transform: scale(1.05);
+        }
+        .cache-info {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: rgba(179, 0, 255, 0.2);
+            border: 2px solid #b300ff;
+            padding: 10px;
+            border-radius: 10px;
+            color: #e6e6ff;
+            font-size: 12px;
+            text-align: center;
+            z-index: 100;
+            opacity: 0.9;
+            max-width: 200px;
         }
         .mobile-controls {
             position: fixed;
@@ -208,6 +226,11 @@
                 padding: 6px 10px;
                 font-size: 0.8em;
             }
+            .cache-info {
+                font-size: 10px;
+                top: 70px;
+                max-width: 150px;
+            }
             .mobile-controls {
                 display: flex; /* Asegurar que siempre esté visible en móviles */
             }
@@ -231,6 +254,9 @@
                 width: 18px;
                 height: 18px;
                 margin-top: -5px;
+            }
+            .cache-info {
+                top: 70px; /* Ajustar posición en paisaje */
             }
         }
     </style>
@@ -258,6 +284,10 @@
     </div>
     <div class="audio-control" id="audioControl" style="display: none;">
         <button id="audioToggle" onclick="toggleAudio()">🔊</button>
+        <button id="cacheClear" onclick="clearCacheAndReload()">🗑️ Borrar Caché</button>
+    </div>
+    <div class="cache-info">
+        Si se congela la pantalla o no funciona el botón, borra caché
     </div>
     <div class="mobile-controls" id="mobileControls">
         <div>
