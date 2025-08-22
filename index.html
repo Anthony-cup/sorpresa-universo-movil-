@@ -86,10 +86,6 @@
             background: linear-gradient(45deg, #a8a8a8, #9900e6);
             transform: scale(1.05);
         }
-        .id-panel button:disabled {
-            background: linear-gradient(45deg, #a8a8a8, #666);
-            cursor: not-allowed;
-        }
         .id-panel .error, .error-panel .error {
             color: #b300ff;
             background: rgba(179, 0, 255, 0.2);
@@ -130,9 +126,6 @@
             top: 20px;
             right: 20px;
             z-index: 100;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
         }
         .audio-control button {
             padding: 8px 12px;
@@ -148,21 +141,6 @@
         .audio-control button:hover {
             background: linear-gradient(45deg, #a8a8a8, #9900e6);
             transform: scale(1.05);
-        }
-        .cache-info {
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            background: rgba(179, 0, 255, 0.2);
-            border: 2px solid #b300ff;
-            padding: 10px;
-            border-radius: 10px;
-            color: #e6e6ff;
-            font-size: 12px;
-            text-align: center;
-            z-index: 100;
-            opacity: 0.9;
-            max-width: 200px;
         }
         .mobile-controls {
             position: fixed;
@@ -230,13 +208,8 @@
                 padding: 6px 10px;
                 font-size: 0.8em;
             }
-            .cache-info {
-                font-size: 10px;
-                top: 70px;
-                max-width: 150px;
-            }
             .mobile-controls {
-                display: flex;
+                display: flex; /* Asegurar que siempre esté visible en móviles */
             }
             .zoom-info {
                 display: none;
@@ -244,11 +217,11 @@
         }
         @media (orientation: landscape) {
             .mobile-controls {
-                top: 3vw;
+                top: 3vw; /* Posicionar en la parte superior */
                 bottom: auto;
                 width: 80vw;
                 max-width: 350px;
-                flex-direction: column;
+                flex-direction: column; /* Mantener disposición vertical */
             }
             .mobile-controls div {
                 font-size: 13px;
@@ -258,9 +231,6 @@
                 width: 18px;
                 height: 18px;
                 margin-top: -5px;
-            }
-            .cache-info {
-                top: 70px;
             }
         }
     </style>
@@ -274,7 +244,7 @@
     <div class="id-panel" id="idPanel">
         <header>Ingresa tu ID</header>
         <input type="text" id="usuario" placeholder="Ej: miusuario123">
-        <button id="loadButton" onclick="cargarDatos()">Cargar Universo</button>
+        <button onclick="cargarDatos()">Cargar Universo</button>
         <div id="mensaje"></div>
     </div>
     <div class="error-panel" id="errorPanel" style="display: none;">
@@ -286,12 +256,8 @@
         <div class="loader-circle"></div>
         <div class="loader-text">Cargando...</div>
     </div>
-    <div class="audio-control" id="audioControl">
+    <div class="audio-control" id="audioControl" style="display: none;">
         <button id="audioToggle" onclick="toggleAudio()">🔊</button>
-        <button id="cacheClear" onclick="clearCacheAndReload()">🗑️ Borrar Caché</button>
-    </div>
-    <div class="cache-info">
-        Si se congela la pantalla o no funciona el botón, borra caché
     </div>
     <div class="mobile-controls" id="mobileControls">
         <div>
@@ -338,24 +304,18 @@
             'Mi amor eterno', 'Tú y yo', 'Por siempre', 'Eres mi luz',
             'Juntos forever', 'Mi corazón'
         ];
-        let fotosGirando = ['https://i.imgur.com/5f5gT1h.jpg'].slice(0, isMobile ? 2 : 4);
+        let fotosGirando = ['https://i.imgur.com/5f5gT1h.jpg'].slice(0, isMobile ? 3 : 5);
         let estrellaFugaz = 'https://i.imgur.com/5f5gT1h.jpg';
         const defaultTextureUrl = 'https://i.imgur.com/5f5gT1h.jpg';
-        let textureCache = {};
 
         // Configuración de la escena
-        let scene, camera, renderer;
-        function initWebGL() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.z = 5;
-            renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: false });
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.domElement.style.display = 'block';
-            document.body.appendChild(renderer.domElement);
-        }
-        initWebGL();
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 5;
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 2 : 3));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
         // Elemento de audio
         const audio = document.getElementById('backgroundMusic');
@@ -370,9 +330,9 @@
 
         // Variables de la visualización
         const radius = 1;
-        const numCircles = isMobile ? 20 : 30;
-        const namesPerCircle = isMobile ? 20 : 40;
-        const textSize = isMobile ? 0.03 : 0.025;
+        const numCircles = isMobile ? 30 : 40;
+        const namesPerCircle = isMobile ? 30 : 50;
+        const textSize = isMobile ? 0.025 : 0.02;
         const textMeshes = [];
         const ringGroups = [];
         let shootingStar = null;
@@ -381,7 +341,6 @@
         let eventTriggered = false;
         let eventStartTime = 0;
         let isLoading = false;
-        let lastClickTime = 0;
 
         // Geometría y material para la estrella fugaz y cometa
         const crystalGeometry = new THREE.OctahedronGeometry(0.5, 1);
@@ -391,7 +350,7 @@
         const flashGeometry = new THREE.PlaneGeometry(30, 30);
 
         // Fondo de estrellas
-        const starCount = isMobile ? 300 : 600;
+        const starCount = isMobile ? 500 : 1000;
         const starGeometry = new THREE.BufferGeometry();
         const starPositions = new Float32Array(starCount * 3);
         const starColors = new Float32Array(starCount * 3);
@@ -406,7 +365,7 @@
         }
         starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
         starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
-        const starMaterial = new THREE.PointsMaterial({ vertexColors: true, size: isMobile ? 0.04 : 0.06 });
+        const starMaterial = new THREE.PointsMaterial({ vertexColors: true, size: isMobile ? 0.03 : 0.05 });
         const stars = new THREE.Points(starGeometry, starMaterial);
         scene.add(stars);
 
@@ -472,7 +431,7 @@
             uniforms: {
                 glowColor: { value: new THREE.Color(0xFFFFFF) },
                 accentColor: { value: new THREE.Color(0xFFFF99) },
-                glowIntensity: { value: isMobile ? 1.0 : 1.5 },
+                glowIntensity: { value: isMobile ? 1.5 : 2.0 },
                 time: { value: 0.0 }
             },
             vertexShader: `
@@ -508,7 +467,7 @@
                 map: { value: null },
                 glowColor: { value: new THREE.Color(0xFFFFFF) },
                 accentColor: { value: new THREE.Color(0xFFFF99) },
-                glowIntensity: { value: isMobile ? 0.8 : 1.2 },
+                glowIntensity: { value: isMobile ? 1.0 : 1.5 },
                 time: { value: 0.0 }
             },
             vertexShader: `
@@ -542,7 +501,7 @@
             uniforms: {
                 glowColor: { value: new THREE.Color(0xFFFFFF) },
                 accentColor: { value: new THREE.Color(0xFFFF99) },
-                glowIntensity: { value: isMobile ? 1.0 : 1.5 },
+                glowIntensity: { value: isMobile ? 1.5 : 2.0 },
                 time: { value: 0.0 }
             },
             vertexShader: `
@@ -611,7 +570,7 @@
                 void main() {
                     vColor = color;
                     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                    gl_PointSize = size * ${isMobile ? '0.3' : '0.4'};
+                    gl_PointSize = size * ${isMobile ? '0.4' : '0.5'};
                 }
             `,
             fragmentShader: `
@@ -641,12 +600,6 @@
                 }
                 localStorage.clear();
                 sessionStorage.clear();
-                textureCache = {};
-                if (renderer) {
-                    renderer.dispose();
-                    renderer.forceContextLoss();
-                    document.body.removeChild(renderer.domElement);
-                }
                 window.location.reload(true);
             } catch (error) {
                 console.error('Error al limpiar caché:', error);
@@ -659,12 +612,10 @@
             const errorPanel = document.getElementById('errorPanel');
             const idPanel = document.getElementById('idPanel');
             const loader = document.getElementById('loader');
-            const loadButton = document.getElementById('loadButton');
             errorPanel.querySelector('.error').textContent = message;
             errorPanel.style.display = 'block';
             idPanel.style.display = 'none';
             loader.style.display = 'none';
-            loadButton.disabled = false;
             isLoading = false;
         }
 
@@ -689,50 +640,36 @@
             if (cometImage) scene.remove(cometImage);
             const textureLoader = new THREE.TextureLoader();
             const textureUrl = estrellaFugaz.startsWith('data:image/') ? estrellaFugaz : defaultTextureUrl;
-            if (textureCache[textureUrl]) {
+            textureLoader.load(textureUrl, (texture) => {
+                texture.generateMipmaps = true;
+                texture.minFilter = THREE.LinearMipmapLinearFilter;
+                texture.magFilter = THREE.LinearFilter;
+                texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
                 const material = imageShaderMaterial.clone();
-                material.uniforms.map.value = textureCache[textureUrl];
+                material.uniforms.map.value = texture;
                 cometImage = new THREE.Mesh(cometGeometry, material);
                 cometImage.position.set(0, 0, 0);
                 scene.add(cometImage);
-            } else {
-                textureLoader.load(textureUrl, (texture) => {
-                    texture.generateMipmaps = true;
-                    texture.minFilter = THREE.LinearMipmapLinearFilter;
-                    texture.magFilter = THREE.LinearFilter;
-                    texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
-                    textureCache[textureUrl] = texture;
-                    const material = imageShaderMaterial.clone();
-                    material.uniforms.map.value = texture;
-                    cometImage = new THREE.Mesh(cometGeometry, material);
-                    cometImage.position.set(0, 0, 0);
-                    scene.add(cometImage);
-                }, undefined, (error) => {
-                    console.error('Error al cargar la textura de la estrella fugaz:', error);
-                    showErrorPanel('Error al cargar recursos. Presiona el botón para borrar el caché y reintentar.');
-                });
-            }
+            }, undefined, (error) => {
+                console.error('Error al cargar la textura de la estrella fugaz:', error);
+                showErrorPanel('Error al cargar recursos. Presiona el botón para borrar el caché y reintentar.');
+            });
         }
 
         // Función para cargar datos desde Firebase
         window.cargarDatos = async function() {
-            const currentTime = Date.now();
-            if (isLoading || (currentTime - lastClickTime) < 1000) return;
-            lastClickTime = currentTime;
+            if (isLoading) return;
             isLoading = true;
             const usuario = document.getElementById("usuario").value.trim().toLowerCase();
             const mensaje = document.getElementById("mensaje");
             const idPanel = document.getElementById("idPanel");
             const loader = document.getElementById("loader");
-            const loadButton = document.getElementById("loadButton");
-            loadButton.disabled = true;
 
             if (!usuario) {
                 mensaje.innerHTML = `<div class="error">❌ Por favor, ingresa un ID.</div>`;
                 mensaje.style.opacity = '1';
                 setTimeout(() => { mensaje.style.opacity = '0'; }, 5000);
                 isLoading = false;
-                loadButton.disabled = false;
                 return;
             }
 
@@ -741,7 +678,7 @@
 
             const timeout = setTimeout(() => {
                 showErrorPanel('La carga está tomando demasiado tiempo. Presiona el botón para borrar el caché y reintentar.');
-            }, 8000);
+            }, 10000);
 
             try {
                 const snapshot = await get(ref(database, "usuarios/" + usuario));
@@ -750,16 +687,17 @@
                     const datos = snapshot.val();
                     nombrePlaneta = datos.nombrePlaneta || "DEYSI";
                     frasesGirando = datos.frasesGirando || frasesGirando;
-                    fotosGirando = (datos.fotosGirando || fotosGirando).slice(0, isMobile ? 2 : 4);
+                    fotosGirando = (datos.fotosGirando || fotosGirando).slice(0, isMobile ? 3 : 5);
                     estrellaFugaz = datos.estrellaFugaz || estrellaFugaz;
                     fotosGirando = fotosGirando.map(url => url.startsWith('data:image/') ? url : defaultTextureUrl);
-                    await iniciarVisualizacion();
+                    iniciarVisualizacion();
                     audio.play().catch(error => {
                         console.error('Error al reproducir audio:', error);
                         mensaje.innerHTML = `<div class="error">❌ Error al reproducir audio: ${error.message}</div>`;
                         mensaje.style.opacity = '1';
                         setTimeout(() => { mensaje.style.opacity = '0'; }, 5000);
                     });
+                    audioControl.style.display = 'block';
                 } else {
                     loader.style.display = 'none';
                     idPanel.style.display = 'block';
@@ -767,7 +705,6 @@
                     mensaje.style.opacity = '1';
                     setTimeout(() => { mensaje.style.opacity = '0'; }, 5000);
                     isLoading = false;
-                    loadButton.disabled = false;
                 }
             } catch (error) {
                 console.error("Error al cargar datos:", error);
@@ -782,31 +719,26 @@
             const texturas = [];
             for (let url of urls) {
                 const textureUrl = url.startsWith('data:image/') ? url : defaultTextureUrl;
-                if (textureCache[textureUrl]) {
-                    texturas.push(textureCache[textureUrl]);
-                    continue;
-                }
                 try {
                     const texture = await new Promise((resolve, reject) => {
                         textureLoader.load(textureUrl, (tex) => {
                             tex.generateMipmaps = true;
                             tex.minFilter = THREE.LinearMipmapLinearFilter;
                             tex.magFilter = THREE.LinearFilter;
-                            tex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
-                            textureCache[textureUrl] = tex;
+                            tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
                             resolve(tex);
                         }, undefined, reject);
                     });
                     texturas.push(texture);
                 } catch (error) {
                     console.error(`Error al cargar textura ${textureUrl}:`, error);
+                    showErrorPanel('Error al cargar recursos. Presiona el botón para borrar el caché y reintentar.');
                     const defaultTexture = await new Promise((resolve, reject) => {
                         textureLoader.load(defaultTextureUrl, (tex) => {
                             tex.generateMipmaps = true;
                             tex.minFilter = THREE.LinearMipmapLinearFilter;
                             tex.magFilter = THREE.LinearFilter;
-                            tex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
-                            textureCache[defaultTextureUrl] = tex;
+                            tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
                             resolve(tex);
                         }, undefined, reject);
                     });
@@ -822,144 +754,140 @@
             const loader = document.getElementById("loader");
             const timeout = setTimeout(() => {
                 showErrorPanel('La inicialización está tomando demasiado tiempo. Presiona el botón para borrar el caché y reintentar.');
-            }, 8000);
+            }, 10000);
 
             try {
                 const texturasGirando = await cargarTexturas(fotosGirando);
+
                 const fontLoader = new THREE.FontLoader();
-                await new Promise((resolve, reject) => {
-                    fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
-                        clearTimeout(timeout);
-                        const textGeometry = new THREE.TextGeometry(nombrePlaneta, {
-                            font: font,
-                            size: textSize,
-                            height: 0.001
-                        });
-
-                        for (let i = 0; i < numCircles; i++) {
-                            const phi = Math.PI * i / (numCircles - 1);
-                            const y = Math.cos(phi) * radius;
-                            const circleRadius = Math.sin(phi) * radius;
-                            for (let j = 0; j < namesPerCircle; j++) {
-                                const theta = 2 * Math.PI * j / namesPerCircle;
-                                const x = Math.cos(theta) * circleRadius;
-                                const z = Math.sin(theta) * circleRadius;
-                                const textMesh = new THREE.Mesh(textGeometry, glowShaderMaterial);
-                                textMesh.position.set(x, y, z);
-                                scene.add(textMesh);
-                                textMeshes.push(textMesh);
-                            }
-                        }
-
-                        for (let i = 0; i < numCircles / 2; i++) {
-                            const phi = 2 * Math.PI * i / (numCircles / 2);
-                            for (let j = 0; j < namesPerCircle; j++) {
-                                const theta = Math.PI * j / (namesPerCircle - 1);
-                                const x = Math.sin(theta) * Math.cos(phi) * radius;
-                                const y = Math.cos(theta) * radius;
-                                const z = Math.sin(theta) * Math.sin(phi) * radius;
-                                const textMesh = new THREE.Mesh(textGeometry, glowShaderMaterial);
-                                textMesh.position.set(x, y, z);
-                                scene.add(textMesh);
-                                textMeshes.push(textMesh);
-                            }
-                        }
-
-                        const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
-                        const ringRadii = [1.6, 2.1, 2.6, 3.1];
-                        const particlesPerRing = isMobile ? [60, 70, 80, 90] : [80, 100, 120, 140];
-                        const phrasesPerRing = isMobile ? [6, 8, 10, 12] : [10, 12, 14, 16];
-                        const starsPerRing = isMobile ? [50, 60, 70, 80] : [70, 90, 110, 130];
-                        const ringThickness = 0.3;
-
-                        ringRadii.forEach((ringRadius, index) => {
-                            const ringGroup = new THREE.Group();
-                            const numImages = particlesPerRing[index];
-                            const numPhrases = phrasesPerRing[index];
-                            const numStars = starsPerRing[index];
-
-                            for (let j = 0; j < numImages; j++) {
-                                const theta = 2 * Math.PI * j / numImages;
-                                const x = ringRadius * Math.cos(theta);
-                                const z = ringRadius * Math.sin(theta);
-                                const y = (Math.random() - 0.5) * ringThickness;
-                                const textureIndex = j % texturasGirando.length;
-                                const material = imageShaderMaterial.clone();
-                                material.uniforms.map.value = texturasGirando[textureIndex];
-                                const imageMesh = new THREE.Mesh(planeGeometry, material);
-                                imageMesh.position.set(x, y, z);
-                                imageMesh.rotation.z = Math.PI / 2;
-                                ringGroup.add(imageMesh);
-                            }
-
-                            for (let j = 0; j < numPhrases; j++) {
-                                const theta = 2 * Math.PI * j / numPhrases;
-                                const x = ringRadius * Math.cos(theta);
-                                const z = Math.sin(theta) * ringRadius;
-                                const y = (Math.random() - 0.5) * ringThickness;
-                                const phraseIndex = j % frasesGirando.length;
-                                const phrase = frasesGirando[phraseIndex];
-                                const phraseGeometry = new THREE.TextGeometry(phrase, {
-                                    font: font,
-                                    size: textSize * 1.5,
-                                    height: 0.001
-                                });
-                                const phraseMesh = new THREE.Mesh(phraseGeometry, glowShaderMaterial);
-                                phraseMesh.position.set(x, y, z);
-                                ringGroup.add(phraseMesh);
-                            }
-
-                            const starPositions = new Float32Array(numStars * 3);
-                            const starColors = new Float32Array(numStars * 3);
-                            const starSizes = new Float32Array(numStars);
-                            for (let j = 0; j < numStars; j++) {
-                                const theta = 2 * Math.PI * j / numStars;
-                                const x = ringRadius * Math.cos(theta);
-                                const z = Math.sin(theta) * ringRadius;
-                                const y = (Math.random() - 0.5) * ringThickness;
-                                starPositions[j * 3] = x;
-                                starPositions[j * 3 + 1] = y;
-                                starPositions[j * 3 + 2] = z;
-                                const color = new THREE.Color().setHSL(0, 0, 0.9);
-                                starColors[j * 3] = color.r;
-                                starColors[j * 3 + 1] = color.g;
-                                starColors[j * 3 + 2] = color.b;
-                                starSizes[j] = isMobile ? (0.015 + Math.random() * 0.015) : (0.02 + Math.random() * 0.02);
-                            }
-                            const starGeometry = new THREE.BufferGeometry();
-                            starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-                            starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
-                            starGeometry.setAttribute('size', new THREE.BufferAttribute(starSizes, 1));
-                            const ringStars = new THREE.Points(starGeometry, ringStarMaterial);
-                            ringGroup.add(ringStars);
-                            scene.add(ringGroup);
-                            ringGroups.push(ringGroup);
-                        });
-
-                        loader.style.display = 'none';
-                        aurora.visible = !isMobile;
-                        isLoading = false;
-                        document.getElementById('loadButton').disabled = false;
-
-                        let countdown = 20;
-                        const countdownElement = document.getElementById('countdown');
-                        countdownElement.textContent = `Meteorito en ${countdown} segundos!`;
-                        const countdownInterval = setInterval(() => {
-                            countdown--;
-                            if (countdown >= 0) {
-                                countdownElement.textContent = `Meteorito en ${countdown} segundos!`;
-                            } else {
-                                countdownElement.textContent = '';
-                                clearInterval(countdownInterval);
-                                createShootingStar();
-                            }
-                        }, 1000);
-                        resolve();
-                    }, undefined, (error) => {
-                        clearTimeout(timeout);
-                        showErrorPanel('Error al cargar la fuente. Presiona el botón para borrar el caché y reintentar.');
-                        reject(error);
+                fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
+                    clearTimeout(timeout);
+                    const textGeometry = new THREE.TextGeometry(nombrePlaneta, {
+                        font: font,
+                        size: textSize,
+                        height: 0.001
                     });
+
+                    for (let i = 0; i < numCircles; i++) {
+                        const phi = Math.PI * i / (numCircles - 1);
+                        const y = Math.cos(phi) * radius;
+                        const circleRadius = Math.sin(phi) * radius;
+                        for (let j = 0; j < namesPerCircle; j++) {
+                            const theta = 2 * Math.PI * j / namesPerCircle;
+                            const x = Math.cos(theta) * circleRadius;
+                            const z = Math.sin(theta) * circleRadius;
+                            const textMesh = new THREE.Mesh(textGeometry, glowShaderMaterial);
+                            textMesh.position.set(x, y, z);
+                            scene.add(textMesh);
+                            textMeshes.push(textMesh);
+                        }
+                    }
+
+                    for (let i = 0; i < numCircles / 2; i++) {
+                        const phi = 2 * Math.PI * i / (numCircles / 2);
+                        for (let j = 0; j < namesPerCircle; j++) {
+                            const theta = Math.PI * j / (namesPerCircle - 1);
+                            const x = Math.sin(theta) * Math.cos(phi) * radius;
+                            const y = Math.cos(theta) * radius;
+                            const z = Math.sin(theta) * Math.sin(phi) * radius;
+                            const textMesh = new THREE.Mesh(textGeometry, glowShaderMaterial);
+                            textMesh.position.set(x, y, z);
+                            scene.add(textMesh);
+                            textMeshes.push(textMesh);
+                        }
+                    }
+
+                    const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
+                    const ringRadii = [1.6, 2.1, 2.6, 3.1, 3.6, 4.1, 4.6, 5.1];
+                    const particlesPerRing = isMobile ? [80, 90, 100, 110, 120, 130, 140, 150] : [100, 120, 140, 160, 180, 200, 220, 240];
+                    const phrasesPerRing = isMobile ? [8, 10, 12, 14, 16, 18, 20, 22] : [12, 14, 16, 18, 20, 22, 24, 26];
+                    const starsPerRing = isMobile ? [70, 80, 90, 100, 110, 120, 130, 140] : [90, 110, 130, 150, 170, 190, 210, 230];
+                    const ringThickness = 0.3;
+
+                    ringRadii.forEach((ringRadius, index) => {
+                        const ringGroup = new THREE.Group();
+                        const numImages = particlesPerRing[index];
+                        const numPhrases = phrasesPerRing[index];
+                        const numStars = starsPerRing[index];
+
+                        for (let j = 0; j < numImages; j++) {
+                            const theta = 2 * Math.PI * j / numImages;
+                            const x = ringRadius * Math.cos(theta);
+                            const z = ringRadius * Math.sin(theta);
+                            const y = (Math.random() - 0.5) * ringThickness;
+                            const textureIndex = j % texturasGirando.length;
+                            const material = imageShaderMaterial.clone();
+                            material.uniforms.map.value = texturasGirando[textureIndex];
+                            const imageMesh = new THREE.Mesh(planeGeometry, material);
+                            imageMesh.position.set(x, y, z);
+                            imageMesh.rotation.z = Math.PI / 2;
+                            ringGroup.add(imageMesh);
+                        }
+
+                        for (let j = 0; j < numPhrases; j++) {
+                            const theta = 2 * Math.PI * j / numPhrases;
+                            const x = ringRadius * Math.cos(theta);
+                            const z = Math.sin(theta) * ringRadius;
+                            const y = (Math.random() - 0.5) * ringThickness;
+                            const phraseIndex = j % frasesGirando.length;
+                            const phrase = frasesGirando[phraseIndex];
+                            const phraseGeometry = new THREE.TextGeometry(phrase, {
+                                font: font,
+                                size: textSize * 2,
+                                height: 0.001
+                            });
+                            const phraseMesh = new THREE.Mesh(phraseGeometry, glowShaderMaterial);
+                            phraseMesh.position.set(x, y, z);
+                            ringGroup.add(phraseMesh);
+                        }
+
+                        const starPositions = new Float32Array(numStars * 3);
+                        const starColors = new Float32Array(numStars * 3);
+                        const starSizes = new Float32Array(numStars);
+                        for (let j = 0; j < numStars; j++) {
+                            const theta = 2 * Math.PI * j / numStars;
+                            const x = ringRadius * Math.cos(theta);
+                            const z = Math.sin(theta) * ringRadius;
+                            const y = (Math.random() - 0.5) * ringThickness;
+                            starPositions[j * 3] = x;
+                            starPositions[j * 3 + 1] = y;
+                            starPositions[j * 3 + 2] = z;
+                            const color = new THREE.Color().setHSL(0, 0, 0.9);
+                            starColors[j * 3] = color.r;
+                            starColors[j * 3 + 1] = color.g;
+                            starColors[j * 3 + 2] = color.b;
+                            starSizes[j] = isMobile ? (0.02 + Math.random() * 0.02) : (0.03 + Math.random() * 0.03);
+                        }
+                        const starGeometry = new THREE.BufferGeometry();
+                        starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+                        starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+                        starGeometry.setAttribute('size', new THREE.BufferAttribute(starSizes, 1));
+                        const ringStars = new THREE.Points(starGeometry, ringStarMaterial);
+                        ringGroup.add(ringStars);
+                        scene.add(ringGroup);
+                        ringGroups.push(ringGroup);
+                    });
+
+                    loader.style.display = 'none';
+                    aurora.visible = true;
+                    isLoading = false;
+
+                    let countdown = 20;
+                    const countdownElement = document.getElementById('countdown');
+                    countdownElement.textContent = `Meteorito en ${countdown} segundos!`;
+                    const countdownInterval = setInterval(() => {
+                        countdown--;
+                        if (countdown >= 0) {
+                            countdownElement.textContent = `Meteorito en ${countdown} segundos!`;
+                        } else {
+                            countdownElement.textContent = '';
+                            clearInterval(countdownInterval);
+                            createShootingStar();
+                        }
+                    }, 1000);
+                }, undefined, (error) => {
+                    clearTimeout(timeout);
+                    showErrorPanel('Error al cargar la fuente. Presiona el botón para borrar el caché y reintentar.');
                 });
             } catch (error) {
                 clearTimeout(timeout);
@@ -991,6 +919,7 @@
             document.addEventListener('mouseleave', () => {
                 isDragging = false;
             });
+
             document.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 camera.position.z += e.deltaY * 0.02;
@@ -1009,30 +938,32 @@
                 camera.position.y = parseFloat(moveSlider.value);
             });
 
+            // Ajustar controles al cambiar orientación
             function adjustMobileControls() {
                 const mobileControls = document.getElementById('mobileControls');
                 mobileControls.style.transition = 'all 0.2s ease';
-                mobileControls.style.display = 'flex';
+                mobileControls.style.display = 'flex'; // Asegurar visibilidad
                 if (window.innerWidth > window.innerHeight) {
+                    // Landscape: controles en la parte superior
                     mobileControls.style.top = '3vw';
                     mobileControls.style.bottom = 'auto';
                     mobileControls.style.width = '80vw';
                     mobileControls.style.maxWidth = '350px';
                 } else {
+                    // Portrait: controles en la parte inferior
                     mobileControls.style.top = 'auto';
                     mobileControls.style.bottom = '5vw';
                     mobileControls.style.width = '90vw';
                     mobileControls.style.maxWidth = '400px';
                 }
-                resizeRenderer();
             }
             window.addEventListener('resize', () => {
-                setTimeout(adjustMobileControls, 50);
+                setTimeout(adjustMobileControls, 100);
             });
             window.addEventListener('orientationchange', () => {
-                setTimeout(adjustMobileControls, 50);
+                setTimeout(adjustMobileControls, 100);
             });
-            adjustMobileControls();
+            adjustMobileControls(); // Inicializar posición
         }
 
         // Animación con FPS limitado en móvil
@@ -1048,95 +979,85 @@
             }
             lastFrameTime = currentTime;
 
-            try {
-                requestAnimationFrame(animate);
-                time += 0.016;
-                glowShaderMaterial.uniforms.time.value = time;
-                imageShaderMaterial.uniforms.time.value = time;
-                shootingStarMaterial.uniforms.time.value = time;
-                auroraMaterial.uniforms.time.value = time;
-                ringStarMaterial.uniforms.time.value = time;
-                if (flashMaterial.uniforms) flashMaterial.uniforms.time.value = time;
+            requestAnimationFrame(animate);
+            time += 0.016;
+            glowShaderMaterial.uniforms.time.value = time;
+            imageShaderMaterial.uniforms.time.value = time;
+            shootingStarMaterial.uniforms.time.value = time;
+            auroraMaterial.uniforms.time.value = time;
+            ringStarMaterial.uniforms.time.value = time;
+            if (flashMaterial.uniforms) flashMaterial.uniforms.time.value = time;
 
-                if (!isMobile || time % 0.1 < 0.016) {
-                    lights.forEach((light, index) => {
-                        light.position.x += Math.sin(time * 0.3 + index) * 0.05;
-                        light.position.y += Math.cos(time * 0.3 + index) * 0.05;
-                    });
-                }
-
-                if (!isMobile || time % 0.05 < 0.016) {
-                    textMeshes.forEach(mesh => {
-                        mesh.lookAt(camera.position);
-                    });
-                }
-
-                ringGroups.forEach((group) => {
-                    group.rotation.y += isMobile ? 0.0005 : 0.001;
-                    group.children.forEach(mesh => {
-                        mesh.lookAt(camera.position);
-                    });
+            if (!isMobile || time % 0.1 < 0.016) {
+                lights.forEach((light, index) => {
+                    light.position.x += Math.sin(time * 0.3 + index) * 0.05;
+                    light.position.y += Math.cos(time * 0.3 + index) * 0.05;
                 });
-
-                if (cometImage) {
-                    cometImage.lookAt(camera.position);
-                    cometImage.position.y = Math.sin(time * 2) * 0.2;
-                }
-
-                if (shootingStar && eventTriggered) {
-                    const elapsed = time - eventStartTime;
-                    const t = elapsed / 2;
-                    if (t <= 1) {
-                        shootingStar.position.x = 10 * (1 - t);
-                        shootingStar.position.y = 10 * (1 - t);
-                        shootingStar.position.z = -10 * (1 - t);
-                        shootingStar.rotation.x += 0.05;
-                        shootingStar.rotation.y += 0.05;
-                    } else if (!flashPlane) {
-                        scene.remove(shootingStar);
-                        shootingStar = null;
-                        createFlash();
-                        createCometImage();
-                        flashMaterial.uniforms.opacity.value = 1.0;
-                    }
-                }
-
-                if (flashPlane) {
-                    const flashTime = time - eventStartTime - 2;
-                    if (flashTime > 0) {
-                        flashMaterial.uniforms.opacity.value = Math.max(0, 1 - flashTime / 2);
-                        if (flashTime > 4) {
-                            scene.remove(flashPlane);
-                            flashPlane = null;
-                        }
-                    }
-                }
-
-                renderer.render(scene, camera);
-            } catch (error) {
-                console.error('Error en la animación:', error);
-                showErrorPanel('Error al renderizar la visualización. Presiona el botón para borrar el caché y reintentar.');
             }
+
+            if (!isMobile || time % 0.05 < 0.016) {
+                textMeshes.forEach(mesh => {
+                    mesh.lookAt(camera.position);
+                });
+            }
+
+            ringGroups.forEach((group) => {
+                group.rotation.y += isMobile ? 0.0005 : 0.001;
+                group.children.forEach(mesh => {
+                    mesh.lookAt(camera.position);
+                });
+            });
+
+            if (cometImage) {
+                cometImage.lookAt(camera.position);
+                cometImage.position.y = Math.sin(time * 2) * 0.2;
+            }
+
+            if (shootingStar && eventTriggered) {
+                const elapsed = time - eventStartTime;
+                const t = elapsed / 2;
+                if (t <= 1) {
+                    shootingStar.position.x = 10 * (1 - t);
+                    shootingStar.position.y = 10 * (1 - t);
+                    shootingStar.position.z = -10 * (1 - t);
+                    shootingStar.rotation.x += 0.05;
+                    shootingStar.rotation.y += 0.05;
+                } else if (!flashPlane) {
+                    scene.remove(shootingStar);
+                    shootingStar = null;
+                    createFlash();
+                    createCometImage();
+                    flashMaterial.uniforms.opacity.value = 1.0;
+                }
+            }
+
+            if (flashPlane) {
+                const flashTime = time - eventStartTime - 2;
+                if (flashTime > 0) {
+                    flashMaterial.uniforms.opacity.value = Math.max(0, 1 - flashTime / 2);
+                    if (flashTime > 4) {
+                        scene.remove(flashPlane);
+                        flashPlane = null;
+                    }
+                }
+            }
+
+            renderer.render(scene, camera);
         }
         animate(performance.now());
 
         // Ajustar tamaño de la ventana
         function resizeRenderer() {
-            try {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
-            } catch (error) {
-                console.error('Error al redimensionar:', error);
-                showErrorPanel('Error al ajustar el tamaño de la ventana. Presiona el botón para borrar el caché y reintentar.');
-            }
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 2 : 3));
         }
         window.addEventListener('resize', resizeRenderer);
         window.addEventListener('orientationchange', () => {
-            setTimeout(resizeRenderer, 50);
+            setTimeout(resizeRenderer, 100);
         });
-        resizeRenderer();
+        resizeRenderer(); // Inicializar tamaño correcto
 
         // Detectar errores iniciales
         window.addEventListener('error', (event) => {
