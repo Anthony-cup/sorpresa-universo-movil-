@@ -32,7 +32,7 @@
             font-size: 14px;
             margin-top: 10px;
         }
-        .error-panel {
+        .error-panel, .audio-prompt-panel {
             position: fixed;
             top: 50%;
             left: 50%;
@@ -48,7 +48,7 @@
             color: #e6e6ff;
             backdrop-filter: blur(5px);
         }
-        .error-panel header {
+        .error-panel header, .audio-prompt-panel header {
             padding: 15px;
             background: linear-gradient(45deg, #c0c0c0, #b300ff);
             color: white;
@@ -56,8 +56,8 @@
             border-top-left-radius: 20px;
             border-top-right-radius: 20px;
         }
-        .error-panel button {
-            width: 100%;
+        .error-panel button, .audio-prompt-panel button {
+            width: 45%;
             padding: 12px;
             border-radius: 12px;
             border: none;
@@ -66,8 +66,9 @@
             font-weight: bold;
             cursor: pointer;
             transition: background 0.3s ease, transform 0.2s ease;
+            margin: 10px 5px;
         }
-        .error-panel button:hover {
+        .error-panel button:hover, .audio-prompt-panel button:hover {
             background: linear-gradient(45deg, #a8a8a8, #9900e6);
             transform: scale(1.05);
         }
@@ -80,6 +81,10 @@
             margin-top: 10px;
             opacity: 1;
             transition: opacity 0.5s ease;
+        }
+        .audio-prompt-panel p {
+            font-size: 1em;
+            margin: 15px 0;
         }
         .loader {
             position: fixed;
@@ -171,13 +176,13 @@
             100% { transform: rotate(360deg); }
         }
         @media (max-width: 600px) {
-            .error-panel {
+            .error-panel, .audio-prompt-panel {
                 width: 95vw;
             }
-            .error-panel header {
+            .error-panel header, .audio-prompt-panel header {
                 font-size: 1em;
             }
-            .error-panel button {
+            .error-panel button, .audio-prompt-panel button {
                 font-size: 0.9em;
                 padding: 10px;
             }
@@ -231,6 +236,12 @@
         <div class="error" id="errorMessage"></div>
         <button onclick="clearCacheAndReload()">Borrar Caché y Reintentar</button>
     </div>
+    <div class="audio-prompt-panel" id="audioPromptPanel" style="display: none;">
+        <header>Reproducir Música</header>
+        <p>¿Deseas reproducir la música de fondo?</p>
+        <button onclick="playAudio()">Sí</button>
+        <button onclick="muteAudio()">No</button>
+    </div>
     <div class="loader" id="loader">
         <div class="loader-circle"></div>
         <div class="loader-text">Cargando...</div>
@@ -256,7 +267,6 @@
         // Importar módulos de Firebase
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
         import { getDatabase, ref, get } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
-
         // Configuración de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyDpOr0m4RL00yNfXZRSPTpLdM3oGNNnxlc",
@@ -268,14 +278,11 @@
             appId: "1:854783882661:web:6588b7701cf4614b99e44c",
             measurementId: "G-ZQXQ3RBE48"
         };
-
         // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
-
         // Detectar si es un dispositivo móvil
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
         // Variables globales para los datos
         let nombrePlaneta = "DEYSI";
         let frasesGirando = [
@@ -286,7 +293,6 @@
         let fotosGirando = ['https://i.imgur.com/5f5gT1h.jpg'].slice(0, isMobile ? 3 : 5);
         let estrellaFugaz = 'https://i.imgur.com/5f5gT1h.jpg';
         const defaultTextureUrl = 'https://i.imgur.com/5f5gT1h.jpg';
-
         // Configuración de la escena
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -295,18 +301,31 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 2 : 3));
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
-
         // Elemento de audio
         const audio = document.getElementById('backgroundMusic');
         const audioControl = document.getElementById('audioControl');
         const audioToggle = document.getElementById('audioToggle');
-
+        const audioPromptPanel = document.getElementById('audioPromptPanel');
         // Función para alternar el audio
         window.toggleAudio = function() {
             audio.muted = !audio.muted;
             audioToggle.textContent = audio.muted ? '🔇' : '🔊';
         };
-
+        // Funciones para el panel de audio
+        window.playAudio = function() {
+            audio.play().catch(error => {
+                console.error('Error al reproducir audio:', error);
+                showErrorPanel(`❌ Error al reproducir audio: ${error.message}`);
+            });
+            audioControl.style.display = 'block';
+            audioPromptPanel.style.display = 'none';
+        };
+        window.muteAudio = function() {
+            audio.muted = true;
+            audioToggle.textContent = '🔇';
+            audioControl.style.display = 'block';
+            audioPromptPanel.style.display = 'none';
+        };
         // Variables de la visualización
         const radius = 1;
         const numCircles = isMobile ? 30 : 40;
@@ -320,14 +339,12 @@
         let eventTriggered = false;
         let eventStartTime = 0;
         let isLoading = false;
-
         // Geometría y material para la estrella fugaz y cometa
         const crystalGeometry = new THREE.OctahedronGeometry(0.5, 1);
         const planeHeight = 0.08;
         const planeWidth = planeHeight * (60 / 100);
         const cometGeometry = new THREE.PlaneGeometry(planeWidth * 10, planeHeight * 10);
         const flashGeometry = new THREE.PlaneGeometry(30, 30);
-
         // Fondo de estrellas
         const starCount = isMobile ? 500 : 1000;
         const starGeometry = new THREE.BufferGeometry();
@@ -347,7 +364,6 @@
         const starMaterial = new THREE.PointsMaterial({ vertexColors: true, size: isMobile ? 0.03 : 0.05 });
         const stars = new THREE.Points(starGeometry, starMaterial);
         scene.add(stars);
-
         // Efecto de aurora boreal
         const auroraGeometry = new THREE.PlaneGeometry(200, 100);
         const auroraMaterial = new THREE.ShaderMaterial({
@@ -391,7 +407,6 @@
         aurora.position.z = -50;
         aurora.visible = !isMobile;
         scene.add(aurora);
-
         // Luces dinámicas
         const lights = [];
         for (let i = 0; i < 2; i++) {
@@ -404,7 +419,6 @@
             scene.add(light);
             lights.push(light);
         }
-
         // Shader para brillo tipo estrella en el cristal
         const glowShaderMaterial = new THREE.ShaderMaterial({
             uniforms: {
@@ -439,7 +453,6 @@
             side: THREE.DoubleSide,
             transparent: true
         });
-
         // Shader para brillo en los bordes de las imágenes
         const imageShaderMaterial = new THREE.ShaderMaterial({
             uniforms: {
@@ -474,7 +487,6 @@
             side: THREE.DoubleSide,
             transparent: true
         });
-
         // Shader para la estrella fugaz
         const shootingStarMaterial = new THREE.ShaderMaterial({
             uniforms: {
@@ -509,7 +521,6 @@
             side: THREE.DoubleSide,
             transparent: true
         });
-
         // Shader para el destello
         const flashMaterial = new THREE.ShaderMaterial({
             uniforms: {
@@ -535,7 +546,6 @@
             side: THREE.DoubleSide,
             transparent: true
         });
-
         // Shader para los puntos de estrellas giratorios
         const ringStarMaterial = new THREE.ShaderMaterial({
             uniforms: {
@@ -569,7 +579,6 @@
             transparent: true,
             vertexColors: true
         });
-
         // Función para limpiar caché y recargar
         window.clearCacheAndReload = async function() {
             try {
@@ -585,7 +594,6 @@
                 window.location.reload(true);
             }
         };
-
         // Función para mostrar el panel de error
         function showErrorPanel(message) {
             const errorPanel = document.getElementById('errorPanel');
@@ -595,7 +603,6 @@
             loader.style.display = 'none';
             isLoading = false;
         }
-
         // Funciones para crear los elementos
         function createShootingStar() {
             if (shootingStar) scene.remove(shootingStar);
@@ -605,14 +612,12 @@
             eventStartTime = time;
             eventTriggered = true;
         }
-
         function createFlash() {
             if (flashPlane) scene.remove(flashPlane);
             flashPlane = new THREE.Mesh(flashGeometry, flashMaterial);
             flashPlane.position.set(0, 0, -1);
             scene.add(flashPlane);
         }
-
         function createCometImage() {
             if (cometImage) scene.remove(cometImage);
             const textureLoader = new THREE.TextureLoader();
@@ -632,31 +637,26 @@
                 showErrorPanel('Error al cargar recursos. Presiona el botón para borrar el caché y reintentar.');
             });
         }
-
         // Función para obtener el ID desde la URL
         function getIdFromUrl() {
             const params = new URLSearchParams(window.location.search);
             return params.get('id') ? params.get('id').trim().toLowerCase() : null;
         }
-
         // Función para cargar datos desde Firebase
         async function cargarDatos() {
             if (isLoading) return;
             isLoading = true;
             const usuario = getIdFromUrl();
             const loader = document.getElementById("loader");
-
             if (!usuario) {
                 showErrorPanel("❌ No se proporcionó un ID en la URL. Por favor, accede con un enlace válido (ejemplo: ?id=abc123).");
                 return;
             }
-
             loader.style.display = 'flex';
-
+            audioPromptPanel.style.display = 'block';
             const timeout = setTimeout(() => {
                 showErrorPanel('La carga está tomando demasiado tiempo. Presiona el botón para borrar el caché y reintentar.');
             }, 10000);
-
             try {
                 const snapshot = await get(ref(database, "usuarios/" + usuario));
                 clearTimeout(timeout);
@@ -668,13 +668,9 @@
                     estrellaFugaz = datos.estrellaFugaz || estrellaFugaz;
                     fotosGirando = fotosGirando.map(url => url.startsWith('data:image/') ? url : defaultTextureUrl);
                     iniciarVisualizacion();
-                    audio.play().catch(error => {
-                        console.error('Error al reproducir audio:', error);
-                        showErrorPanel(`❌ Error al reproducir audio: ${error.message}`);
-                    });
-                    audioControl.style.display = 'block';
                 } else {
                     loader.style.display = 'none';
+                    audioPromptPanel.style.display = 'none';
                     showErrorPanel("❌ ID no encontrado. Verifica el ID en la URL e intenta de nuevo.");
                 }
             } catch (error) {
@@ -683,7 +679,6 @@
                 showErrorPanel('Error al conectar con la base de datos. Presiona el botón para borrar el caché y reintentar.');
             }
         }
-
         // Función para cargar texturas de fotosGirando
         async function cargarTexturas(urls) {
             const textureLoader = new THREE.TextureLoader();
@@ -718,7 +713,6 @@
             }
             return texturas;
         }
-
         // Función para inicializar la visualización
         async function iniciarVisualizacion() {
             if (!isLoading) return;
@@ -726,10 +720,8 @@
             const timeout = setTimeout(() => {
                 showErrorPanel('La inicialización está tomando demasiado tiempo. Presiona el botón para borrar el caché y reintentar.');
             }, 10000);
-
             try {
                 const texturasGirando = await cargarTexturas(fotosGirando);
-
                 const fontLoader = new THREE.FontLoader();
                 fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
                     clearTimeout(timeout);
@@ -738,7 +730,6 @@
                         size: textSize,
                         height: 0.001
                     });
-
                     for (let i = 0; i < numCircles; i++) {
                         const phi = Math.PI * i / (numCircles - 1);
                         const y = Math.cos(phi) * radius;
@@ -753,7 +744,6 @@
                             textMeshes.push(textMesh);
                         }
                     }
-
                     for (let i = 0; i < numCircles / 2; i++) {
                         const phi = 2 * Math.PI * i / (numCircles / 2);
                         for (let j = 0; j < namesPerCircle; j++) {
@@ -767,20 +757,17 @@
                             textMeshes.push(textMesh);
                         }
                     }
-
                     const planeGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
                     const ringRadii = [1.6, 2.1, 2.6, 3.1, 3.6, 4.1, 4.6, 5.1];
                     const particlesPerRing = isMobile ? [80, 90, 100, 110, 120, 130, 140, 150] : [100, 120, 140, 160, 180, 200, 220, 240];
                     const phrasesPerRing = isMobile ? [8, 10, 12, 14, 16, 18, 20, 22] : [12, 14, 16, 18, 20, 22, 24, 26];
                     const starsPerRing = isMobile ? [70, 80, 90, 100, 110, 120, 130, 140] : [90, 110, 130, 150, 170, 190, 210, 230];
                     const ringThickness = 0.3;
-
                     ringRadii.forEach((ringRadius, index) => {
                         const ringGroup = new THREE.Group();
                         const numImages = particlesPerRing[index];
                         const numPhrases = phrasesPerRing[index];
                         const numStars = starsPerRing[index];
-
                         for (let j = 0; j < numImages; j++) {
                             const theta = 2 * Math.PI * j / numImages;
                             const x = ringRadius * Math.cos(theta);
@@ -794,7 +781,6 @@
                             imageMesh.rotation.z = Math.PI / 2;
                             ringGroup.add(imageMesh);
                         }
-
                         for (let j = 0; j < numPhrases; j++) {
                             const theta = 2 * Math.PI * j / numPhrases;
                             const x = ringRadius * Math.cos(theta);
@@ -811,7 +797,6 @@
                             phraseMesh.position.set(x, y, z);
                             ringGroup.add(phraseMesh);
                         }
-
                         const starPositions = new Float32Array(numStars * 3);
                         const starColors = new Float32Array(numStars * 3);
                         const starSizes = new Float32Array(numStars);
@@ -838,11 +823,9 @@
                         scene.add(ringGroup);
                         ringGroups.push(ringGroup);
                     });
-
                     loader.style.display = 'none';
                     aurora.visible = true;
                     isLoading = false;
-
                     let countdown = 20;
                     const countdownElement = document.getElementById('countdown');
                     countdownElement.textContent = `Meteorito en ${countdown} segundos!`;
@@ -865,7 +848,6 @@
                 showErrorPanel('Error al inicializar la visualización. Presiona el botón para borrar el caché y reintentar.');
             }
         }
-
         // Control de movimiento de cámara (solo para escritorio)
         if (!isMobile) {
             let isDragging = false;
@@ -890,14 +872,12 @@
             document.addEventListener('mouseleave', () => {
                 isDragging = false;
             });
-
             document.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 camera.position.z += e.deltaY * 0.02;
                 camera.position.z = Math.max(0.1, Math.min(20, camera.position.z));
             }, { passive: false });
         }
-
         // Controles móviles
         if (isMobile) {
             const zoomSlider = document.getElementById('zoomSlider');
@@ -908,7 +888,6 @@
             moveSlider.addEventListener('input', () => {
                 camera.position.y = parseFloat(moveSlider.value);
             });
-
             // Ajustar controles al cambiar orientación
             function adjustMobileControls() {
                 const mobileControls = document.getElementById('mobileControls');
@@ -936,20 +915,17 @@
             });
             adjustMobileControls(); // Inicializar posición
         }
-
         // Animación con FPS limitado en móvil
         let time = 0;
         let lastFrameTime = 0;
         const targetFPS = isMobile ? 30 : 60;
         const frameInterval = 1000 / targetFPS;
-
         function animate(currentTime) {
             if (isMobile && (currentTime - lastFrameTime) < frameInterval) {
                 requestAnimationFrame(animate);
                 return;
             }
             lastFrameTime = currentTime;
-
             requestAnimationFrame(animate);
             time += 0.016;
             glowShaderMaterial.uniforms.time.value = time;
@@ -958,32 +934,27 @@
             auroraMaterial.uniforms.time.value = time;
             ringStarMaterial.uniforms.time.value = time;
             if (flashMaterial.uniforms) flashMaterial.uniforms.time.value = time;
-
             if (!isMobile || time % 0.1 < 0.016) {
                 lights.forEach((light, index) => {
                     light.position.x += Math.sin(time * 0.3 + index) * 0.05;
                     light.position.y += Math.cos(time * 0.3 + index) * 0.05;
                 });
             }
-
             if (!isMobile || time % 0.05 < 0.016) {
                 textMeshes.forEach(mesh => {
                     mesh.lookAt(camera.position);
                 });
             }
-
             ringGroups.forEach((group) => {
                 group.rotation.y += isMobile ? 0.0005 : 0.001;
                 group.children.forEach(mesh => {
                     mesh.lookAt(camera.position);
                 });
             });
-
             if (cometImage) {
                 cometImage.lookAt(camera.position);
                 cometImage.position.y = Math.sin(time * 2) * 0.2;
             }
-
             if (shootingStar && eventTriggered) {
                 const elapsed = time - eventStartTime;
                 const t = elapsed / 2;
@@ -1001,7 +972,6 @@
                     flashMaterial.uniforms.opacity.value = 1.0;
                 }
             }
-
             if (flashPlane) {
                 const flashTime = time - eventStartTime - 2;
                 if (flashTime > 0) {
@@ -1012,11 +982,9 @@
                     }
                 }
             }
-
             renderer.render(scene, camera);
         }
         animate(performance.now());
-
         // Ajustar tamaño de la ventana
         function resizeRenderer() {
             camera.aspect = window.innerWidth / window.innerHeight;
@@ -1029,7 +997,6 @@
             setTimeout(resizeRenderer, 100);
         });
         resizeRenderer(); // Inicializar tamaño correcto
-
         // Detectar errores iniciales
         window.addEventListener('error', (event) => {
             if (isLoading) {
@@ -1041,7 +1008,6 @@
                 showErrorPanel('Error al cargar datos. Presiona el botón para borrar el caché y reintentar.');
             }
         });
-
         // Iniciar carga automática al cargar la página
         cargarDatos();
     </script>
