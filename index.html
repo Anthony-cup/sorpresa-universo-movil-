@@ -32,7 +32,7 @@
             font-size: 14px;
             margin-top: 10px;
         }
-        .error-panel, .audio-prompt-panel {
+        .error-panel, .audio-prompt-panel, .expiration-panel {
             position: fixed;
             top: 50%;
             left: 50%;
@@ -48,7 +48,7 @@
             color: #e6e6ff;
             backdrop-filter: blur(5px);
         }
-        .error-panel header, .audio-prompt-panel header {
+        .error-panel header, .audio-prompt-panel header, .expiration-panel header {
             padding: 15px;
             background: linear-gradient(45deg, #c0c0c0, #b300ff);
             color: white;
@@ -56,7 +56,7 @@
             border-top-left-radius: 20px;
             border-top-right-radius: 20px;
         }
-        .error-panel button, .audio-prompt-panel button {
+        .error-panel button, .audio-prompt-panel button, .expiration-panel button {
             width: 45%;
             padding: 12px;
             border-radius: 12px;
@@ -68,11 +68,11 @@
             transition: background 0.3s ease, transform 0.2s ease;
             margin: 10px 5px;
         }
-        .error-panel button:hover, .audio-prompt-panel button:hover {
+        .error-panel button:hover, .audio-prompt-panel button:hover, .expiration-panel button:hover {
             background: linear-gradient(45deg, #a8a8a8, #9900e6);
             transform: scale(1.05);
         }
-        .error-panel .error {
+        .error-panel .error, .expiration-panel .error {
             color: #b300ff;
             background: rgba(179, 0, 255, 0.2);
             font-size: 1em;
@@ -116,6 +116,10 @@
             top: 20px;
             right: 20px;
             z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
         }
         .audio-control button {
             padding: 8px 12px;
@@ -131,6 +135,12 @@
         .audio-control button:hover {
             background: linear-gradient(45deg, #a8a8a8, #9900e6);
             transform: scale(1.05);
+        }
+        .countdown-timer {
+            color: #FF69B4;
+            font-size: 12px;
+            opacity: 0.7;
+            text-align: right;
         }
         .mobile-controls {
             position: fixed;
@@ -176,13 +186,13 @@
             100% { transform: rotate(360deg); }
         }
         @media (max-width: 600px) {
-            .error-panel, .audio-prompt-panel {
+            .error-panel, .audio-prompt-panel, .expiration-panel {
                 width: 95vw;
             }
-            .error-panel header, .audio-prompt-panel header {
+            .error-panel header, .audio-prompt-panel header, .expiration-panel header {
                 font-size: 1em;
             }
-            .error-panel button, .audio-prompt-panel button {
+            .error-panel button, .audio-prompt-panel button, .expiration-panel button {
                 font-size: 0.9em;
                 padding: 10px;
             }
@@ -197,6 +207,9 @@
             .audio-control button {
                 padding: 6px 10px;
                 font-size: 0.8em;
+            }
+            .countdown-timer {
+                font-size: 10px;
             }
             .mobile-controls {
                 display: flex; /* Asegurar que siempre esté visible en móviles */
@@ -242,11 +255,17 @@
         <button onclick="playAudio()">Sí</button>
         <button onclick="muteAudio()">No</button>
     </div>
+    <div class="expiration-panel" id="expirationPanel" style="display: none;">
+        <header>Tiempo Expirado</header>
+        <div class="error">⏰ ¡El tiempo se acabó! Crea un nuevo enlace.</div>
+        <button onclick="createNewLink()">Crear Nuevo Enlace</button>
+    </div>
     <div class="loader" id="loader">
         <div class="loader-circle"></div>
         <div class="loader-text">Cargando...</div>
     </div>
     <div class="audio-control" id="audioControl" style="display: none;">
+        <div class="countdown-timer" id="countdownTimer">Tiempo restante: Calculando...</div>
         <button id="audioToggle" onclick="toggleAudio()">🔊</button>
     </div>
     <div class="mobile-controls" id="mobileControls">
@@ -306,6 +325,8 @@
         const audioControl = document.getElementById('audioControl');
         const audioToggle = document.getElementById('audioToggle');
         const audioPromptPanel = document.getElementById('audioPromptPanel');
+        const expirationPanel = document.getElementById('expirationPanel');
+        const countdownTimer = document.getElementById('countdownTimer');
         // Función para alternar el audio
         window.toggleAudio = function() {
             audio.muted = !audio.muted;
@@ -326,6 +347,36 @@
             audioControl.style.display = 'block';
             audioPromptPanel.style.display = 'none';
         };
+        // Función para redirigir a crear un nuevo enlace
+        window.createNewLink = function() {
+            window.location.href = 'https://anthony-cup.github.io/sorpresa-de-universo/';
+        };
+        // Función para actualizar el conteo regresivo
+        function updateCountdown(timestamp) {
+            const eightHours = 8 * 60 * 60 * 1000; // 8 horas en milisegundos
+            const now = Date.now();
+            const elapsed = now - timestamp;
+            const timeLeft = Math.max(0, eightHours - elapsed);
+            if (timeLeft <= 0) {
+                clearInterval(countdownInterval);
+                countdownTimer.textContent = 'Tiempo expirado';
+                showExpirationPanel();
+                return;
+            }
+            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            countdownTimer.textContent = `Tiempo restante: ${hours}h ${minutes}m ${seconds}s`;
+        }
+        let countdownInterval = null;
+        // Función para mostrar el panel de expiración
+        function showExpirationPanel() {
+            const loader = document.getElementById('loader');
+            const audioPromptPanel = document.getElementById('audioPromptPanel');
+            loader.style.display = 'none';
+            audioPromptPanel.style.display = 'none';
+            expirationPanel.style.display = 'block';
+        }
         // Variables de la visualización
         const radius = 1;
         const numCircles = isMobile ? 30 : 40;
@@ -662,11 +713,21 @@
                 clearTimeout(timeout);
                 if (snapshot.exists()) {
                     const datos = snapshot.val();
+                    const timestamp = datos.timestamp || Date.now();
+                    const eightHours = 8 * 60 * 60 * 1000; // 8 horas en milisegundos
+                    const now = Date.now();
+                    if (now - timestamp > eightHours) {
+                        showExpirationPanel();
+                        return;
+                    }
                     nombrePlaneta = datos.nombrePlaneta || "DEYSI";
                     frasesGirando = datos.frasesGirando || frasesGirando;
                     fotosGirando = (datos.fotosGirando || fotosGirando).slice(0, isMobile ? 3 : 5);
                     estrellaFugaz = datos.estrellaFugaz || estrellaFugaz;
                     fotosGirando = fotosGirando.map(url => url.startsWith('data:image/') ? url : defaultTextureUrl);
+                    // Iniciar conteo regresivo
+                    countdownInterval = setInterval(() => updateCountdown(timestamp), 1000);
+                    updateCountdown(timestamp); // Actualizar inmediatamente
                     iniciarVisualizacion();
                 } else {
                     loader.style.display = 'none';
